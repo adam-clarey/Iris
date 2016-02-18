@@ -1,7 +1,3 @@
-
-
-
-
 var exports = {};
 
 exports.adminUser = {
@@ -18,3 +14,6 @@ exports.adminUser = {
 exports.baseURL = 'http://www.iris.local:' + '4000';
 
 module.exports = exports
+
+
+
