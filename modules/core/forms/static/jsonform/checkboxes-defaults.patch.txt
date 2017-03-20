@@ -1,0 +1,18 @@
+diff --git a/lib/jsonform.js b/lib/jsonform.js
+index f957452..ef38e40 100644
+--- a/lib/jsonform.js
++++ b/lib/jsonform.js
+@@ -1173,8 +1173,12 @@ jsonform.elementTypes = {
+       if (!node || !node.schemaElement || !node.schemaElement.items) return;
+       choices = node.formElement.options;
+       if (!choices) return;
+-      if (!node.value || !Array.isArray(node.value))
++      if (!node.value) {
+         node.value = [];
++      }
++      else if (!Array.isArray(node.value)) {
++        node.value = [node.value];
++      }
+       choiceshtml = '';
+       _.each(choices, function (choice, idx) {
+         choiceshtml += _template(template, {

@@ -1,0 +1,155 @@
+From 1f0f70aeba1a65173bc70275a49d0ea86a5f3564 Mon Sep 17 00:00:00 2001
+From: facascante <chito.cascante@gmail.com>
+Date: Tue, 17 May 2016 19:47:42 +0800
+Subject: [PATCH 1/3] add support for field cardinality
+
+---
+ db.js                              | 21 +++++++++++++++++++++
+ modules/extra/entityUI/entityUI.js | 12 ++++++++++++
+ modules/extra/entityUI/schemaUI.js | 17 +++++++++++++++++
+ 3 files changed, 50 insertions(+)
+
+diff --git a/db.js b/db.js
+index 33bb2f9..1f8c572 100644
+--- a/db.js
++++ b/db.js
+@@ -332,6 +332,27 @@ iris.dbPopulate = function() {
+     Object.keys(schemaConfig.fields).forEach(function(fieldName) {
+ 
+       finalSchema[fieldName] = fieldConverter(schemaConfig.fields[fieldName]);
++      
++      if(finalSchema[fieldName].maxItems){
++        
++        var arrayLimit = function(val){
++          
++          if(Array.isArray(val)){
++            
++            return val.length <= finalSchema[fieldName].maxItems;
++             
++          }
++          else{
++            
++            return true;
++            
++          }
++          
++        };
++    
++        finalSchema[fieldName].validate = [arrayLimit, '{PATH} exceeds the limit of '+ finalSchema[fieldName].maxItems]
++        
++      }
+ 
+     });
+ 
+diff --git a/modules/extra/entityUI/entityUI.js b/modules/extra/entityUI/entityUI.js
+index 2b3e0c5..a70194a 100644
+--- a/modules/extra/entityUI/entityUI.js
++++ b/modules/extra/entityUI/entityUI.js
+@@ -679,6 +679,18 @@ iris.modules.entityUI.registerHook("hook_form_render__entity", 0, function (this
+           form.required = true;
+ 
+         }
++        
++        if(field.minItems){
++          
++           form.minItems = field.minItems;
++           
++        }
++        
++        if(field.maxItems){
++          
++          form.maxItems = field.maxItems;
++          
++        }
+ 
+         data.schema[fieldName] = form;
+         fieldLoaded();
+diff --git a/modules/extra/entityUI/schemaUI.js b/modules/extra/entityUI/schemaUI.js
+index 6a467e7..578636e 100644
+--- a/modules/extra/entityUI/schemaUI.js
++++ b/modules/extra/entityUI/schemaUI.js
+@@ -971,6 +971,23 @@ iris.modules.entityUI.registerHook("hook_generate_fieldBasicForm", 0, function (
+       }
+ 
+     }
++  };
++  
++  var readableTypeList = ["[String]", "[Number]", "[Boolean]", "[Date]"];
++
++  if ((Array.isArray(fieldType) && (typeof fieldType[0] === "object")) || (readableTypeList.indexOf(field.readableType) != -1)) {
++
++    data.schema.fields.properties.minItems = {
++      "type": "number",
++      "title": "Minimum entry",
++      "description": "at a minimum, how many record will be accepted for this field?"
++    };
++
++    data.schema.fields.properties.maxItems = {
++      "type": "number",
++      "title": "Maximum entry",
++      "description": "at a maximum, how many record will be accepted for this field?"
++    };
+   }
+ 
+   thisHook.pass(data);
+
+From 0bec9816c3a17e27709be08592656f518e045008 Mon Sep 17 00:00:00 2001
+From: facascante <chito.cascante@gmail.com>
+Date: Tue, 17 May 2016 21:31:02 +0800
+Subject: [PATCH 2/3] Update package.json
+
+---
+ package.json | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/package.json b/package.json
+index a8d0acb..18139fa 100644
+--- a/package.json
++++ b/package.json
+@@ -44,7 +44,6 @@
+     "jshint": "^2.9.1"
+   },
+   "scripts": {
+-    "test": "grunt default",
+-    "postinstall": "cp example.js ../../example.js"
++    "test": "grunt default"
+   }
+ }
+
+From 3958e64837cedaa0fba2471bee6b9d89673438e4 Mon Sep 17 00:00:00 2001
+From: facascante <chito.cascante@gmail.com>
+Date: Tue, 17 May 2016 21:47:28 +0800
+Subject: [PATCH 3/3] fix test issue to due to bug for using a variable that is
+ not defined....
+
+---
+ modules/extra/entityUI/schemaUI.js | 2 +-
+ package.json                       | 3 +--
+ 2 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/modules/extra/entityUI/schemaUI.js b/modules/extra/entityUI/schemaUI.js
+index 578636e..547ea36 100644
+--- a/modules/extra/entityUI/schemaUI.js
++++ b/modules/extra/entityUI/schemaUI.js
+@@ -897,7 +897,7 @@ iris.modules.entityUI.registerHook("hook_generate_fieldBasicForm", 0, function (
+   data.value.fields = [];
+ 
+   var field = thisHook.context.field;
+-
++  var fieldType = field.type;
+   delete field.type;
+ 
+   field.about = "<b>Machine name:</b> " + thisHook.context.fieldName + "<br />";
+diff --git a/package.json b/package.json
+index a8d0acb..18139fa 100644
+--- a/package.json
++++ b/package.json
+@@ -44,7 +44,6 @@
+     "jshint": "^2.9.1"
+   },
+   "scripts": {
+-    "test": "grunt default",
+-    "postinstall": "cp example.js ../../example.js"
++    "test": "grunt default"
+   }
+ }
